@@ -36,6 +36,9 @@ elems = (
     'body', 'head'
 )
 
+def chunk(msg):
+    return '%X\r\n%s\r\n' % (len(msg), msg)
+
 class Flood:
   """\
   Let's see how much data this person
@@ -43,9 +46,10 @@ class Flood:
   """
   def GET(self):
     web.ctx['headers'].append(('X-Powered-By', 'rust'))
-    msg = 'Y U NO LEAVE US ALONE?\r\n'*2000
+    msg = 'Y U NO LEAVE US ALONE?\n'*2000
+    msg = chunk(msg)
     # roughly 250M/s on localhost
-    yield '<!DOCTYPE html><html><head></head><body><pre>\r\n'
+    yield chunk('<!DOCTYPE html><html><head></head><body><pre>')
     while 1:
       yield msg
       gevent.sleep(0)
@@ -60,10 +64,9 @@ class Trickle:
   def GET(self):
     from pprint import pprint
     web.ctx['headers'].append(('X-Powered-By', 'rust'))
-    yield '<!DOCTYPE html><html><head></head><body><pre>\r\n'
+    yield chunk('<!DOCTYPE html><html><head></head><body><pre>')
     while 1:
-      yield junk_str()
-      yield '\r\n'
+      yield chunk(junk_str())
       gevent.sleep(1)
 
 
@@ -100,9 +103,9 @@ class Junkmail:
   """
   def GET(self):
     web.ctx['headers'].append(('X-Powered-By', 'rust'))
-    yield '<html><head></head><body><ol>'
+    yield chunk('<html><head></head><body><ol>')
     while 1:
-      yield '<li>%s</li>' % junk_email()
+      yield chunk('<li>%s</li>' % junk_email())
       gevent.sleep(0.1)
 
 
@@ -115,8 +118,8 @@ class InfiniDOM:
   """
   def GET(self):
     web.ctx['headers'].append(('X-Powered-By', 'rust'))
-    dom = '<div>' * 1000
-    yield '<!DOCTYPE html><html><head></head><body>'
+    dom = chunk('<div>' * 1000)
+    yield chunk('<!DOCTYPE html><html><head></head><body>')
     while 1:
       yield dom
       gevent.sleep(0.1)
@@ -124,7 +127,6 @@ class InfiniDOM:
 
 class MongrelDOM:
     r = SystemRandom()
-
 
     elements = (
         lambda: '<%s' % choice(elems),
@@ -142,12 +144,10 @@ class MongrelDOM:
         web.ctx['headers'].append(('X-Powered-By', 'rust'))
         web.ctx['headers'].append(('Content-Type', 'text/html'))
 
-        yield '<!DOCTYPE html>'
+        yield chunk('<!DOCTYPE html>')
         while 1:
             mess= ''.join(e() for e in (choice(self.elements) for i in range(10)))
-            yield '%X\r\n' % len(mess)
-            yield mess
-            yield '\r\n'
+            yield chunk(mess)
             gevent.sleep(1)
 
 if __name__ == "__main__":
