@@ -1,5 +1,3 @@
-#from gevent.server import StreamServer
-
 from gevent import monkey; monkey.patch_all()
 
 from random import sample, randint
