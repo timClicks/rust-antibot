@@ -1,9 +1,122 @@
-RUST :: slowing down misbehaving web crawlers since 2012
+RUST :: corroding misbehaving web crawlers since 2012
+
+
+     ===================================
+     WARNING: killing a web spider will
+     not do good things for your SEO. 
+     make sure you only trap bots which
+     are not respecting the rules of the
+     web: robots.txt.
+     ===================================
+
+
+introduction
+- - - - - - -
+
+RUST is designed to hamper web crawlers that refuse to respect
+robots.txt. It does this by providing several examples of
+responses which do not end. RUST hamper efforts to crawl
+your site in an automated manner because it:
+
+   - stops syncronous from downloading any actual resources
+
+   - will tie up (at least one) of the crawlers' worker
+     threads, which will limit
+     the numbers of concurrent connections which can 
+     be made to your site.
+ 
+   - adds many junk resources to the crawler's queue, 
+     creating processing bottlenecks
+
+These relies on the fact that most crawlers are written 
+without worrying too much about the possibility that 
+someone might attempt to prevent them.
+
+RUST acts as a honeypot. It uses 0% CPU when inactive,
+and uses gevent to handle potentially thousands of 
+concurrent connections.
+
+
+usage
+- - -
+
+
+Step 1: Warn good bots
+
+  Add a disallowed resource to your application's robots.txt.
+  Here is an example. Further details are available at 
+  http://www.robotstxt.org/robotstxt.html  
+
+    User-agent: *
+    Disallow: /rust/
+
+
+Step 2: Set link bait  
+  
+  Add a hidden hyperlink to one of the disallowed resources.
+  
+    <a href="/rust/flood" style="display:none;"></a>
+
+  Well-behaved bots, like search engines, will ignore this 
+  link. The others, who we are targetting, will not.
+
+
+Step 3: Configure RUST
+
+  Configure the routes within `rust.py`. With the current
+  setup, you should chance the `routes` variable from
+
+    routes = (
+      "/bounce/", "Bounce",
+      "/bounce/(.*)", "Bounce",
+      "/infinidom/", "InfiniDOM",
+      "/flood/", "Flood",
+      "/mute/", "Mute",
+      "/trickle/", "Trickle",
+      "/junkmail/", "Junkmail"
+    )
+
+  to
+
+    routes = (
+      "/rust/flood/", "Flood"
+    )
+
+
+Step 4: Deployment
+
+  You will probably want to configure your
+  web server to proxy any requests to disallowed
+  URLs to a running instance of RUST. Refer to 
+  your server's documentation on WSGI deployment.
+
+
+further development
+- - - - - - - - - -
+
+It is very plausible that the HashDoS and Slowloris attacks
+could be included in RUST. Pull requests are welcome.
+
+  _Slowloris_  could be implemented easily by streaming
+               incorrect HTTP response headers.
+
+  _HashDoS_    could be implemented by sending 1MB of
+               form data with unique name fields. 
 
 
 legal notices
 - - - - - - -
 
- * Copyright is owned by Tim McNamara <code@timmcnamara.co.nz>
- * Software (code * docs) is released under the Apache 2 licence.
+ - Consumer Guarantees Act 1993
+     If you use this software for personal use, you may
+     be entitled to certain guarantees provided by
+     New Zealand law.
+  
+ - Copyright
+     Software is owned by Tim McNamara <code@timmcnamara.co.nz>.
 
+ - Licence
+    Software (code * docs) is released under the Apache 2 licence.
+
+ - Trade marks
+     RUST is an unregistered trade mark of Tim McNamara.
