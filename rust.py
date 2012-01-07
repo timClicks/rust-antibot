@@ -109,9 +109,10 @@ class InfiniDOM:
   """
   def GET(self):
     web.ctx['headers'].append(('X-Powered-By', 'rust'))
+    dom = '<div>' * 1000
     yield '<!DOCTYPE html><html><head></head><body>'
     while 1:
-      yield '<div>' * 1000
+      yield dom
       gevent.sleep(0.1)
 
 
