@@ -37,6 +37,14 @@ and uses gevent to handle potentially thousands of
 concurrent connections.
 
 
+installation
+- - - - - -
+
+  $ pip install gevent web.py
+  $ git clone https://github.com/timClicks/rust.git
+
+
+
 usage
 - - -
 
