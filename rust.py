@@ -1,6 +1,6 @@
 from gevent import monkey; monkey.patch_all()
 
-from random import sample, randint
+from random import SystemRandom, choice, sample, randint
 from string import ascii_letters
 
 from gevent.pywsgi import WSGIServer
@@ -15,6 +15,7 @@ routes = (
   "/bounce/(.*)", "Bounce",
   "/infinidom/", "InfiniDOM",
   "/flood/", "Flood",
+  "/mongrel/", "MongrelDOM",
   "/mute/", "Mute",
   "/trickle/", "Trickle",
   "/junkmail/", "Junkmail",
@@ -29,6 +30,11 @@ def junk_email():
 def junk_credit_card():
   return '%d %d %d %d' % tuple(randint(1000, 9999) for i in range(4))
 
+elems = (
+    'div', 'p', 'span', 'h1', 'h2', 'ol', 'li',
+    'ruby', 'marquee', 'blink', 'pre', 'html',
+    'body', 'head'
+)
 
 class Flood:
   """\
@@ -115,6 +121,34 @@ class InfiniDOM:
       yield dom
       gevent.sleep(0.1)
 
+
+class MongrelDOM:
+    r = SystemRandom()
+
+
+    elements = (
+        lambda: '<%s' % choice(elems),
+        lambda: '</%s>' % choice(elems),
+        junk_str,
+        junk_email,
+        junk_credit_card,
+        lambda: '/>',
+        lambda: '<',
+        lambda: '<%s class= >' % choice(elems), #opps, malformed attr
+        lambda: '<>',
+    )
+
+    def GET(self):
+        web.ctx['headers'].append(('X-Powered-By', 'rust'))
+        web.ctx['headers'].append(('Content-Type', 'text/html'))
+
+        yield '<!DOCTYPE html>'
+        while 1:
+            mess= ''.join(e() for e in (choice(self.elements) for i in range(10)))
+            yield '%X\r\n' % len(mess)
+            yield mess
+            yield '\r\n'
+            gevent.sleep(1)
 
 if __name__ == "__main__":
 
