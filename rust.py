@@ -1,6 +1,6 @@
 from gevent import monkey; monkey.patch_all()
 
-from random import SystemRandom, choice, sample, randint
+from random import SystemRandom, choice, sample, randint, random
 from string import ascii_letters
 
 from gevent.pywsgi import WSGIServer
@@ -14,6 +14,8 @@ routes = (
   "/bounce/", "Bounce",
   "/bounce/(.*)", "Bounce",
   "/infinidom/", "InfiniDOM",
+  "/linkfury/", "LinkFury",
+  "/linkfury/(.*)", "LinkFury",
   "/flood/", "Flood",
   "/mongrel/", "MongrelDOM",
   "/mute/", "Mute",
@@ -31,13 +33,13 @@ def junk_credit_card():
   return '%d %d %d %d' % tuple(randint(1000, 9999) for i in range(4))
 
 elems = (
-    'div', 'p', 'span', 'h1', 'h2', 'ol', 'li',
-    'ruby', 'marquee', 'blink', 'pre', 'html',
-    'body', 'head'
+  'div', 'p', 'span', 'h1', 'h2', 'ol', 'li',
+  'ruby', 'marquee', 'blink', 'pre', 'html',
+  'body', 'head'
 )
 
 def chunk(msg):
-    return '%X\r\n%s\r\n' % (len(msg), msg)
+  return '%s\r\n' % msg
 
 class Flood:
   """\
@@ -45,11 +47,10 @@ class Flood:
   wants. 
   """
   def GET(self):
-    web.ctx['headers'].append(('X-Powered-By', 'rust'))
-    msg = 'Y U NO LEAVE US ALONE?\n'*2000
-    msg = chunk(msg)
-    # roughly 250M/s on localhost
-    yield chunk('<!DOCTYPE html><html><head></head><body><pre>')
+    web.header('Content-Type', 'text/html')
+    web.header('X-Powered-By', 'rust')
+    msg = 'Y U NO LEAVE US ALONE?\r\n'*2000
+    yield '<!DOCTYPE html><html><head></head><body><pre>'
     while 1:
       yield msg
       gevent.sleep(0)
@@ -62,11 +63,11 @@ class Trickle:
   hang around waiting.
   """
   def GET(self):
-    from pprint import pprint
-    web.ctx['headers'].append(('X-Powered-By', 'rust'))
-    yield chunk('<!DOCTYPE html><html><head></head><body><pre>')
+    web.header('Content-Type', 'text/html')
+    web.header('X-Powered-By', 'rust')
+    yield '<!DOCTYPE html><html><head></head><body><pre>'
     while 1:
-      yield chunk(junk_str())
+      yield junk_str()
       gevent.sleep(1)
 
 
@@ -78,7 +79,8 @@ class Mute:
   hold up one of their threads ad infinitum. 
   """
   def GET(self):
-    web.ctx['headers'].append(('X-Powered-By', 'rust'))
+    web.header('Content-Type', 'text/html')
+    web.header('X-Powered-By', 'rust')
     while 1:
       yield ''
       gevent.sleep(10)
@@ -89,8 +91,8 @@ class Bounce:
   Let's clog up their HTTP request queue.
   """
   def GET(self, meh=None):
-    web.ctx['headers'].append(('X-Powered-By', 'rust'))
-    raise web.seeother('/bounce/%s' % ''.join(sample(ascii_letters, 10)))
+    web.header('X-Powered-By', 'rust')
+    raise web.seeother('/bounce/%s' % junk_str())
 
 
 class Junkmail:
@@ -102,10 +104,11 @@ class Junkmail:
   further down their pipeline.
   """
   def GET(self):
-    web.ctx['headers'].append(('X-Powered-By', 'rust'))
-    yield chunk('<html><head></head><body><ol>')
+    web.header('Content-Type','text/html')
+    web.header('X-Powered-By', 'rust')
+    yield '<html><head></head><body><ol>'
     while 1:
-      yield chunk('<li>%s</li>' % junk_email())
+      yield '<li>%s</li>' % junk_email()
       gevent.sleep(0.1)
 
 
@@ -117,42 +120,54 @@ class InfiniDOM:
   advantage of that.
   """
   def GET(self):
-    web.ctx['headers'].append(('X-Powered-By', 'rust'))
-    dom = chunk('<div>' * 1000)
-    yield chunk('<!DOCTYPE html><html><head></head><body>')
+    web.header('Content-Type', 'text/html')
+    web.header('X-Powered-By', 'rust')
+    dom = '<div>' * 1000
+    yield '<!DOCTYPE html><html><head></head><body>'
     while 1:
       yield dom
       gevent.sleep(0.1)
 
 
 class MongrelDOM:
-    r = SystemRandom()
+  elements = (
+      lambda: '<%s' % choice(elems),
+      lambda: '</%s>' % choice(elems),
+      junk_str,
+      junk_email,
+      junk_credit_card,
+      lambda: '/>',
+      lambda: '<',
+      lambda: '<%s class= >' % choice(elems), #opps, malformed attr
+      lambda: '<>',
+  )
 
-    elements = (
-        lambda: '<%s' % choice(elems),
-        lambda: '</%s>' % choice(elems),
-        junk_str,
-        junk_email,
-        junk_credit_card,
-        lambda: '/>',
-        lambda: '<',
-        lambda: '<%s class= >' % choice(elems), #opps, malformed attr
-        lambda: '<>',
-    )
+  def GET(self):
+    web.header('Content-Type', 'text/html')
+    web.header('X-Powered-By', 'rust')
 
-    def GET(self):
-        web.ctx['headers'].append(('X-Powered-By', 'rust'))
-        web.ctx['headers'].append(('Content-Type', 'text/html'))
+    yield '<!DOCTYPE html>'
+    while 1:
+      mess = ''.join(e() for e in (choice(self.elements) for i in range(10)))
+      yield mess
+      gevent.sleep(1)
 
-        yield chunk('<!DOCTYPE html>')
-        while 1:
-            mess= ''.join(e() for e in (choice(self.elements) for i in range(10)))
-            yield chunk(mess)
-            gevent.sleep(1)
+
+class LinkFury:
+  """ 
+  How about giving people n^10 links that they need to crawl?
+  """
+  path = "/linkfury/"
+  def GET(self, meh=None):
+    web.header('X-Powered-By', 'rust')
+    web.header('Content-Type', 'text/html')
+    yield '<!DOCTYPE html>'
+    for i in range(10):
+      s = junk_str()
+      yield '<a href="%s%s">%s</a>' % (self.path, s, s)
+      gevent.sleep(0.4)
 
 if __name__ == "__main__":
-
-
   app = web.application(routes, globals()).wsgifunc()
   print 'Serving on %s:%d' % (HOST, PORT)
   WSGIServer((HOST, PORT), app).serve_forever()
