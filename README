@@ -1,4 +1,4 @@
-RUST :: corroding misbehaving web crawlers since 2012
+RUST :: corroding misbehaving web bots since 2012
 
 
      ===================================
@@ -63,7 +63,9 @@ Step 2: Set link bait
   
   Add a hidden hyperlink to one of the disallowed resources.
   
-    <a href="/rust/flood" style="display:none;"></a>
+    <a href="/rust/flood/" style="display:none;"></a>
+
+    <a href="/rust/infinidom/" rel="nofollow noindex"></a>
 
   Well-behaved bots, like search engines, will ignore this 
   link. The others, who we are targetting, will not.
@@ -106,10 +108,12 @@ It is very plausible that the HashDoS and Slowloris attacks
 could be included in RUST. Pull requests are welcome.
 
   _Slowloris_  could be implemented easily by streaming
-               incorrect HTTP response headers.
+               incorrect HTTP response headers. This 
+               would require breaking PEP-333. 
 
-  _HashDoS_    could be implemented by sending 1MB of
-               form data with unique name fields. 
+  _HashDoS_    could be implemented by sending form data 
+               with unique name fields. Form names and values 
+               are generally stored as hash maps.
 
 
 legal notices
