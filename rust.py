@@ -2,6 +2,7 @@ from gevent import monkey; monkey.patch_all()
 
 from random import SystemRandom, choice, sample, randint, random
 from string import ascii_letters
+from uuid import uuid4
 
 from gevent.pywsgi import WSGIServer
 import gevent
@@ -24,7 +25,7 @@ routes = (
 )
 
 def junk_str():
-  return ''.join(sample(ascii_letters, 10))
+  return uuid4().hex
 
 def junk_email():
   return '%s@example.net' % junk_str()
