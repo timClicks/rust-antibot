@@ -128,7 +128,8 @@ legal notices
      Software is owned by Tim McNamara <code@timmcnamara.co.nz>.
 
  - Licence
-    Software (code * docs) is released under the Apache 2 licence.
+    Software is released under the GNU Affero General Public 
+    License (AGPL) <http://www.gnu.org/licenses/agpl.html>.
 
  - Trade marks
      RUST is an unregistered trade mark of Tim McNamara.
